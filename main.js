@@ -21,11 +21,10 @@ function createWindow() {
   });
 
   // Load Vite Dev URL or built static files
-  if (process.env.VITE_DEV_SERVER_URL) {
-    mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
-    // mainWindow.webContents.openDevTools();
-  } else {
+  if (app.isPackaged) {
     mainWindow.loadFile(path.join(__dirname, 'dist', 'index.html'));
+  } else {
+    mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173');
   }
 
   // Handle IPC calls from TitleBar.jsx
