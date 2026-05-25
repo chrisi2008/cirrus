@@ -1,0 +1,1361 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<title>Cirrus — Karlsruhe</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: 'Inter', "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+    color: #fff;
+    overflow: hidden;
+    background: #0a0a0a;
+    -webkit-font-smoothing: antialiased;
+  }
+  .font-serif { font-family: 'Instrument Serif', serif; font-weight: 400; }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* Outer desktop wallpaper area */
+  .desk {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background:
+      radial-gradient(ellipse at 30% 20%, #1a1f3a 0%, transparent 50%),
+      radial-gradient(ellipse at 70% 80%, #2a1a3a 0%, transparent 50%),
+      linear-gradient(135deg, #0a0e1f 0%, #1a0e2a 100%);
+    overflow: hidden;
+  }
+  /* faint star/dust on wallpaper */
+  .desk::before {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.4), transparent),
+      radial-gradient(1px 1px at 80% 60%, rgba(255,255,255,0.3), transparent),
+      radial-gradient(1px 1px at 45% 80%, rgba(255,255,255,0.35), transparent),
+      radial-gradient(1px 1px at 90% 20%, rgba(255,255,255,0.3), transparent);
+  }
+
+  /* Window chrome */
+  .win {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #0d0a08;
+    isolation: isolate;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.08),
+      0 40px 120px -20px rgba(0,0,0,0.7),
+      0 20px 60px -10px rgba(0,0,0,0.5);
+  }
+
+  /* Background gradient inside window */
+  .bg-layer {
+    position: absolute; inset: 0;
+    transition: background 1.2s ease, opacity 1.2s ease;
+  }
+  /* bg-sunny is set dynamically via inline style from sunIntensity */
+  .bg-rainy {
+    background:
+      radial-gradient(ellipse 80% 60% at 80% 100%, #1a2540 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 10% 0%, #3a5078 0%, transparent 55%),
+      linear-gradient(180deg, #1a2238 0%, #2a3a58 35%, #3e5478 70%, #4c6688 100%);
+  }
+  .bg-night {
+    background:
+      radial-gradient(ellipse 70% 50% at 80% 100%, #2a1855 0%, transparent 55%),
+      radial-gradient(ellipse 50% 40% at 0% 0%, #6b3aa8 0%, transparent 55%),
+      linear-gradient(135deg, #0d0820 0%, #1a1040 40%, #2e1a5e 75%, #4a2a7a 100%);
+  }
+  .bg-cloudy {
+    background:
+      radial-gradient(ellipse 70% 50% at 80% 100%, #6b7a85 0%, transparent 55%),
+      radial-gradient(ellipse 50% 40% at 0% 0%, #b8c2cc 0%, transparent 55%),
+      linear-gradient(135deg, #8a96a3 0%, #a8b3bf 40%, #c8d0d8 75%, #dde2e7 100%);
+  }
+
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(70px);
+    opacity: 0.85;
+    mix-blend-mode: screen;
+    animation: drift 22s ease-in-out infinite alternate;
+  }
+  @keyframes drift {
+    0%   { transform: translate(0,0) scale(1); }
+    50%  { transform: translate(60px,-40px) scale(1.08); }
+    100% { transform: translate(-40px,30px) scale(0.94); }
+  }
+  @keyframes drift-slow {
+    0%   { transform: translate(0,0) scale(1); }
+    50%  { transform: translate(-50px,40px) scale(1.1); }
+    100% { transform: translate(30px,-30px) scale(0.95); }
+  }
+  .sun-core {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(10px);
+    top: -180px; right: -120px;
+    animation: drift 26s ease-in-out infinite alternate;
+    transition: background 0.8s ease, width 0.6s ease, height 0.6s ease;
+  }
+  /* Rain — fallende Tropfen + Nebel + Pfützen-Spiegelung */
+  .rain-layer {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .drop {
+    position: absolute;
+    top: -10%;
+    width: 1px;
+    background: linear-gradient(180deg, transparent 0%, rgba(220,230,245,0.55) 60%, rgba(220,230,245,0.85) 100%);
+    transform-origin: top;
+    animation-name: fall;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    border-radius: 1px;
+  }
+  @keyframes fall {
+    0%   { transform: translate3d(0, -10vh, 0) rotate(8deg); opacity: 0; }
+    8%   { opacity: 1; }
+    100% { transform: translate3d(-12vh, 110vh, 0) rotate(8deg); opacity: 0.7; }
+  }
+  .rain-fog {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 38%;
+    background: linear-gradient(180deg,
+      transparent 0%,
+      rgba(180,200,220,0.10) 35%,
+      rgba(200,215,230,0.22) 70%,
+      rgba(220,230,240,0.30) 100%);
+    filter: blur(8px);
+    pointer-events: none;
+  }
+  .rain-vignette {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 80% 70% at 50% 30%, transparent 0%, rgba(0,0,0,0.25) 100%);
+  }
+  .rain-puddle {
+    position: absolute;
+    left: 50%; transform: translateX(-50%);
+    bottom: 4%;
+    width: 60%; height: 8px;
+    background: radial-gradient(ellipse, rgba(180,200,230,0.5) 0%, transparent 70%);
+    filter: blur(6px);
+    pointer-events: none;
+    animation: pulse-fog 3s ease-in-out infinite;
+  }
+  @keyframes pulse-fog {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 0.9; }
+  }
+
+  /* Storm: tiefdunkler Himmel, Blitz-Overlay, Bolt-SVG */
+  .bg-storm {
+    background:
+      radial-gradient(ellipse 60% 50% at 70% 100%, #0a0d1a 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 20% 0%, #1a1830 0%, transparent 55%),
+      linear-gradient(180deg, #0e0f1a 0%, #1a1d2e 35%, #232842 70%, #2c3550 100%);
+  }
+  .storm-flash {
+    position: absolute; inset: 0;
+    background: rgba(220,230,255,0.85);
+    pointer-events: none;
+    opacity: 0;
+    mix-blend-mode: screen;
+    animation: flash var(--flash-cycle, 6s) ease-out infinite;
+  }
+  @keyframes flash {
+    0%,  1.5%, 100% { opacity: 0; }
+    1.7% { opacity: 0.95; }
+    2.5% { opacity: 0.1; }
+    3.2% { opacity: 0.7; }
+    4.5% { opacity: 0; }
+    42%, 44% { opacity: 0; }
+    44.5% { opacity: 0.6; }
+    46% { opacity: 0; }
+  }
+  .bolt {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0;
+    animation: bolt-show var(--flash-cycle, 6s) ease-out infinite;
+    filter: drop-shadow(0 0 16px rgba(180,200,255,0.85)) drop-shadow(0 0 6px rgba(255,255,255,0.9));
+  }
+  .bolt.b1 { top: 4%; left: 22%; animation-delay: 0s; }
+  .bolt.b2 { top: 8%; left: 65%; animation-delay: 3s; }
+  @keyframes bolt-show {
+    0%, 1.5%, 4.5%, 100% { opacity: 0; }
+    1.7%, 2.4% { opacity: 1; }
+    3.2% { opacity: 0.7; }
+  }
+
+  /* Snow: kalter Himmel, Flocken */
+  .bg-snow {
+    background:
+      radial-gradient(ellipse 60% 50% at 70% 100%, #4a5a78 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 20% 0%, #b8c8de 0%, transparent 55%),
+      linear-gradient(180deg, #6e7e98 0%, #8a9ab4 35%, #adbed1 70%, #d2dde8 100%);
+  }
+  .snow-layer {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .snowflake {
+    position: absolute;
+    top: -10%;
+    border-radius: 50%;
+    background: #fff;
+    animation-name: snow-fall;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    box-shadow: 0 0 6px rgba(255,255,255,0.7);
+  }
+  @keyframes snow-fall {
+    0%   { transform: translate3d(0, -10vh, 0); opacity: 0; }
+    10%  { opacity: 1; }
+    50%  { transform: translate3d(8vh, 50vh, 0); }
+    90%  { opacity: 1; }
+    100% { transform: translate3d(-4vh, 110vh, 0); opacity: 0; }
+  }
+  .snow-floor {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 22%;
+    background: linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.20) 60%, rgba(255,255,255,0.35) 100%);
+    filter: blur(8px);
+    pointer-events: none;
+  }
+  .stars {
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 10% 20%, #fff, transparent),
+      radial-gradient(1px 1px at 80% 20%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 60% 60%, #fff, transparent),
+      radial-gradient(1px 1px at 30% 80%, #fff, transparent),
+      radial-gradient(1px 1px at 90% 50%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 15% 65%, #fff, transparent),
+      radial-gradient(1px 1px at 45% 15%, #fff, transparent),
+      radial-gradient(1px 1px at 70% 85%, #fff, transparent),
+      radial-gradient(1px 1px at 25% 45%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 55% 25%, #fff, transparent);
+    opacity: 0.75;
+  }
+
+  /* Glass surfaces */
+  .glass {
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(32px) saturate(170%);
+    -webkit-backdrop-filter: blur(32px) saturate(170%);
+    border: 1px solid rgba(255,255,255,0.16);
+    box-shadow:
+      inset 0 1px 0 0 rgba(255,255,255,0.5),
+      inset 0 -1px 0 0 rgba(255,255,255,0.06),
+      0 20px 60px -20px rgba(0,0,0,0.35),
+      0 8px 24px -12px rgba(0,0,0,0.25);
+  }
+  .glass-strong {
+    background: rgba(255,255,255,0.18);
+    backdrop-filter: blur(44px) saturate(180%);
+    -webkit-backdrop-filter: blur(44px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.22);
+    box-shadow:
+      inset 0 1px 0 0 rgba(255,255,255,0.65),
+      inset 0 -1px 0 0 rgba(255,255,255,0.06),
+      0 30px 80px -20px rgba(0,0,0,0.4);
+  }
+  .glass-chip {
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(22px) saturate(155%);
+    -webkit-backdrop-filter: blur(22px) saturate(155%);
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow:
+      inset 0 1px 0 0 rgba(255,255,255,0.45),
+      inset 0 -1px 0 0 rgba(255,255,255,0.05);
+  }
+  .glass-tiny {
+    background: rgba(255,255,255,0.10);
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    border: 1px solid rgba(255,255,255,0.13);
+    box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.4);
+  }
+  .sidebar-glass {
+    background: rgba(15,15,20,0.32);
+    backdrop-filter: blur(40px) saturate(170%);
+    -webkit-backdrop-filter: blur(40px) saturate(170%);
+    border-right: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .text-readable { text-shadow: 0 1px 12px rgba(0,0,0,0.22); }
+
+  .scrollx::-webkit-scrollbar { display: none; }
+  .scrollx { scrollbar-width: none; }
+  .scrolly::-webkit-scrollbar { width: 6px; }
+  .scrolly::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+  .scrolly::-webkit-scrollbar-track { background: transparent; }
+
+  /* Hero number */
+  .temp-display {
+    font-family: 'Instrument Serif', serif;
+    font-weight: 400;
+    font-size: 280px;
+    line-height: 0.85;
+    letter-spacing: -0.07em;
+    text-shadow: 0 4px 50px rgba(0,0,0,0.22);
+  }
+
+  .live-dot {
+    width: 7px; height: 7px;
+    background: #4ade80;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #4ade80;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* Win11 title bar buttons */
+  .win-btn {
+    width: 46px; height: 32px;
+    display: grid; place-items: center;
+    transition: background 0.15s ease;
+    cursor: pointer;
+    color: rgba(255,255,255,0.85);
+  }
+  .win-btn:hover { background: rgba(255,255,255,0.12); }
+  .win-btn.close:hover { background: #e81123; color: #fff; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    color: rgba(255,255,255,0.78);
+    cursor: pointer;
+    transition: background 0.15s ease;
+    font-size: 13px;
+    font-weight: 500;
+    position: relative;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+  .nav-item.active {
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+  }
+  .nav-item.active::before {
+    content: "";
+    position: absolute;
+    left: 2px; top: 8px; bottom: 8px;
+    width: 3px;
+    background: #fff;
+    border-radius: 2px;
+    box-shadow: 0 0 6px rgba(255,255,255,0.5);
+  }
+
+  .city-card {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    color: rgba(255,255,255,0.92);
+  }
+  .city-card:hover { background: rgba(255,255,255,0.06); }
+  .city-card.active {
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.14);
+  }
+
+  .scale-wrap { transform-origin: center center; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+<script type="text/babel" data-presets="env,react">
+const { useState, useEffect, useRef, useMemo } = React;
+const { TweaksPanel, TweakSection, TweakRadio, TweakToggle, TweakSlider, useTweaks } = window;
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "mood": "snow",
+  "showRain": true,
+  "showBlobs": true,
+  "showWallpaper": true,
+  "compactSidebar": false,
+  "sunIntensity": 50,
+  "rainIntensity": 100,
+  "stormIntensity": 100,
+  "snowIntensity": 100,
+  "apiKey": ""
+}/*EDITMODE-END*/;
+
+// ---- color helpers ----
+const lerp = (a, b, t) => a + (b - a) * t;
+const hsl = (h, s, l, a = 1) => `hsla(${h.toFixed(1)}, ${s.toFixed(1)}%, ${l.toFixed(1)}%, ${a})`;
+
+// Sunny gradient morphs cool-morning(0) -> warm-mid(50) -> hot-sunset(100)
+function sunnyGradient(intensity) {
+  const t = Math.max(0, Math.min(1, intensity / 100));
+  const cTL = hsl(lerp(48, 32, t), lerp(75, 95, t), lerp(80, 65, t));
+  const cBR = hsl(lerp(195, 8, t), lerp(55, 92, t), lerp(60, 48, t));
+  const s1 = hsl(lerp(205, 12, t), lerp(45, 88, t), lerp(72, 48, t));
+  const s2 = hsl(lerp(40, 22, t), lerp(60, 92, t), lerp(75, 58, t));
+  const s3 = hsl(lerp(45, 32, t), lerp(65, 90, t), lerp(78, 65, t));
+  const s4 = hsl(lerp(50, 42, t), lerp(70, 85, t), lerp(85, 75, t));
+  return `
+    radial-gradient(ellipse 70% 50% at 80% 100%, ${cBR} 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 0% 0%, ${cTL} 0%, transparent 55%),
+    linear-gradient(160deg, ${s1} 0%, ${s2} 35%, ${s3} 70%, ${s4} 100%)
+  `;
+}
+function sunCoreStyle(intensity) {
+  const t = Math.max(0, Math.min(1, intensity / 100));
+  const c1 = hsl(lerp(55, 50, t), lerp(85, 100, t), lerp(95, 88, t));
+  const c2 = hsl(lerp(48, 38, t), lerp(85, 100, t), lerp(80, 68, t));
+  const c3 = hsl(lerp(40, 18, t), lerp(80, 95, t), lerp(65, 52, t));
+  const size = lerp(420, 620, t);
+  return { width: size, height: size,
+    background: `radial-gradient(circle at 50% 50%, ${c1} 0%, ${c2} 25%, ${c3} 55%, transparent 75%)` };
+}
+function blobColors(intensity) {
+  const t = Math.max(0, Math.min(1, intensity / 100));
+  return {
+    a: hsl(lerp(40, 8, t), lerp(70, 95, t), lerp(60, 50, t)),
+    b: hsl(lerp(48, 32, t), lerp(80, 95, t), lerp(80, 70, t)),
+    c: hsl(lerp(55, 45, t), lerp(85, 95, t), lerp(88, 78, t)),
+  };
+}
+
+// ----------------- Tabler-style stroke icons -----------------
+const Icon = ({ name, size = 18, stroke = 1.75, color = "currentColor" }) => {
+  const c = {
+    width: size, height: size, viewBox: "0 0 24 24",
+    fill: "none", stroke: color, strokeWidth: stroke,
+    strokeLinecap: "round", strokeLinejoin: "round"
+  };
+  const P = {
+    search:    <><circle cx="10" cy="10" r="7"/><path d="m21 21-6-6"/></>,
+    mic:       <><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></>,
+    plus:      <><path d="M12 5v14M5 12h14"/></>,
+    location:  <><path d="M12 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3z"/><path d="M12 21s-7-7.5-7-13a7 7 0 0 1 14 0c0 5.5-7 13-7 13z"/></>,
+    list:      <><path d="M4 6h16M4 12h16M4 18h16"/></>,
+    thermometer:<><path d="M12 13.5V4a2 2 0 0 0-4 0v9.5a4 4 0 1 0 4 0z"/></>,
+    wind:      <><path d="M3 8h11a3 3 0 1 0-3-3"/><path d="M3 12h17a3 3 0 1 1-3 3"/><path d="M3 16h8a3 3 0 1 1-3 3"/></>,
+    drop:      <><path d="M12 3s-6 7-6 12a6 6 0 0 0 12 0c0-5-6-12-6-12z"/></>,
+    sun:       <><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></>,
+    uv:        <><circle cx="12" cy="12" r="3.5"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2"/></>,
+    eye:       <><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></>,
+    sunrise:   <><path d="M12 2v6M5.6 9.6 7 11M2 16h2M20 16h2M17 11l1.4-1.4"/><path d="M3 20h18"/><path d="M16 20a4 4 0 0 0-8 0"/></>,
+    sunset:    <><path d="M12 8V2M5.6 9.6 7 11M2 16h2M20 16h2M17 11l1.4-1.4"/><path d="M3 20h18"/><path d="M16 20a4 4 0 0 0-8 0"/></>,
+    home:      <><path d="M3 12 12 3l9 9"/><path d="M5 10v10h14V10"/></>,
+    map:       <><path d="m3 6 6-2 6 2 6-2v16l-6 2-6-2-6 2z"/><path d="M9 4v16M15 6v16"/></>,
+    cal:       <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></>,
+    radar:     <><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></>,
+    settings:  <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3 1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8 1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></>,
+    star:      <><path d="m12 2 3 7 7.5.6-5.7 4.9 1.8 7.4L12 17.8 5.4 21.9 7.2 14.5 1.5 9.6 9 9z"/></>,
+    sparkle:   <><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6 7.7 7.7M16.3 16.3l2.1 2.1M5.6 18.4 7.7 16.3M16.3 7.7l2.1-2.1"/></>,
+    aqi:       <><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 8a4 4 0 1 0 4 4"/><circle cx="12" cy="12" r="1"/></>,
+    bell:      <><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></>,
+    refresh:   <><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></>,
+    minus:     <><path d="M5 12h14"/></>,
+    square:    <><rect x="5" y="5" width="14" height="14" rx="1.5"/></>,
+    close:     <><path d="M6 6l12 12M18 6 6 18"/></>,
+    chevR:     <><path d="m9 6 6 6-6 6"/></>,
+  };
+  return <svg {...c}>{P[name]}</svg>;
+};
+
+// ----------------- Data -----------------
+const MOODS = {
+  sunny: {
+    bg: "bg-sunny",
+    temp: 23, condition: "Heiter", sub: "Sonnig den ganzen Tag",
+    high: 25, low: 14,
+    feels: 24, wind: 8, windDir: "NW", humidity: 42, uv: 6, visibility: 16,
+    pressure: 1018, dew: 9, aqi: 32, precip: 0,
+    sunrise: "05:48", sunset: "21:14",
+    emoji: "☀️",
+  },
+  rainy: {
+    bg: "bg-rainy",
+    temp: 14, condition: "Regenschauer", sub: "Niederschlag bis 18 Uhr",
+    high: 17, low: 11,
+    feels: 12, wind: 22, windDir: "SW", humidity: 88, uv: 1, visibility: 6,
+    pressure: 1002, dew: 12, aqi: 18, precip: 4.8,
+    sunrise: "05:48", sunset: "21:14",
+    emoji: "🌧️",
+  },
+  night: {
+    bg: "bg-night",
+    temp: 16, condition: "Klare Nacht", sub: "Sterne sichtbar",
+    high: 23, low: 14,
+    feels: 15, wind: 4, windDir: "O", humidity: 62, uv: 0, visibility: 20,
+    pressure: 1020, dew: 8, aqi: 28, precip: 0,
+    sunrise: "05:48", sunset: "21:14",
+    emoji: "🌙",
+  },
+  cloudy: {
+    bg: "bg-cloudy",
+    temp: 18, condition: "Bedeckt", sub: "Wolkig den ganzen Tag",
+    high: 20, low: 13,
+    feels: 17, wind: 12, windDir: "W", humidity: 71, uv: 2, visibility: 12,
+    pressure: 1012, dew: 11, aqi: 45, precip: 0.2,
+    sunrise: "05:48", sunset: "21:14",
+    emoji: "☁️",
+  },
+  storm: {
+    bg: "bg-storm",
+    temp: 13, condition: "Gewitter", sub: "Starke Böen · Blitz & Donner",
+    high: 16, low: 10,
+    feels: 10, wind: 38, windDir: "SW", humidity: 92, uv: 0, visibility: 3,
+    pressure: 992, dew: 12, aqi: 22, precip: 18.4,
+    sunrise: "05:48", sunset: "21:14",
+    emoji: "⛈️",
+  },
+  snow: {
+    bg: "bg-snow",
+    temp: -2, condition: "Schneefall", sub: "Leichter Schneefall · Glatte Straßen",
+    high: 1, low: -5,
+    feels: -6, wind: 14, windDir: "NO", humidity: 82, uv: 1, visibility: 4,
+    pressure: 1015, dew: -4, aqi: 30, precip: 5.2,
+    sunrise: "07:42", sunset: "17:08",
+    emoji: "❄️",
+  },
+};
+
+const FORECAST = {
+  sunny: [
+    { day: "Heute",  emoji: "☀️",  hi: 25, lo: 14, prec: 0 },
+    { day: "Dienstag", emoji: "🌤️", hi: 24, lo: 13, prec: 0 },
+    { day: "Mittwoch", emoji: "☀️",  hi: 27, lo: 15, prec: 0 },
+    { day: "Donnerstag", emoji: "⛅",  hi: 22, lo: 14, prec: 0 },
+    { day: "Freitag", emoji: "🌦️", hi: 19, lo: 12, prec: 30 },
+    { day: "Samstag", emoji: "🌧️", hi: 17, lo: 11, prec: 80 },
+    { day: "Sonntag", emoji: "🌤️", hi: 21, lo: 13, prec: 10 },
+  ],
+  rainy: [
+    { day: "Heute",  emoji: "🌧️", hi: 17, lo: 11, prec: 90 },
+    { day: "Dienstag", emoji: "🌦️", hi: 18, lo: 12, prec: 60 },
+    { day: "Mittwoch", emoji: "⛅",  hi: 20, lo: 13, prec: 20 },
+    { day: "Donnerstag", emoji: "🌤️", hi: 22, lo: 14, prec: 5 },
+    { day: "Freitag", emoji: "☀️",  hi: 24, lo: 14, prec: 0 },
+    { day: "Samstag", emoji: "🌤️", hi: 23, lo: 13, prec: 0 },
+    { day: "Sonntag", emoji: "🌧️", hi: 16, lo: 11, prec: 70 },
+  ],
+  night: [
+    { day: "Heute",  emoji: "🌙",  hi: 23, lo: 14, prec: 0 },
+    { day: "Dienstag", emoji: "🌤️", hi: 24, lo: 13, prec: 0 },
+    { day: "Mittwoch", emoji: "☀️",  hi: 27, lo: 15, prec: 0 },
+    { day: "Donnerstag", emoji: "⛅",  hi: 22, lo: 14, prec: 5 },
+    { day: "Freitag", emoji: "🌦️", hi: 19, lo: 12, prec: 30 },
+    { day: "Samstag", emoji: "🌧️", hi: 17, lo: 11, prec: 80 },
+    { day: "Sonntag", emoji: "🌤️", hi: 21, lo: 13, prec: 10 },
+  ],
+  cloudy: [
+    { day: "Heute",  emoji: "☁️",  hi: 20, lo: 13, prec: 10 },
+    { day: "Dienstag", emoji: "⛅",  hi: 21, lo: 13, prec: 5 },
+    { day: "Mittwoch", emoji: "🌤️", hi: 23, lo: 14, prec: 0 },
+    { day: "Donnerstag", emoji: "☀️",  hi: 25, lo: 15, prec: 0 },
+    { day: "Freitag", emoji: "🌦️", hi: 19, lo: 13, prec: 50 },
+    { day: "Samstag", emoji: "🌧️", hi: 16, lo: 12, prec: 80 },
+    { day: "Sonntag", emoji: "⛅",  hi: 22, lo: 14, prec: 10 },
+  ],
+  storm: [
+    { day: "Heute",  emoji: "⛈️", hi: 16, lo: 10, prec: 95 },
+    { day: "Dienstag", emoji: "⛈️", hi: 15, lo:  9, prec: 80 },
+    { day: "Mittwoch", emoji: "🌧️", hi: 17, lo: 11, prec: 70 },
+    { day: "Donnerstag", emoji: "🌦️", hi: 19, lo: 12, prec: 40 },
+    { day: "Freitag", emoji: "⛅",  hi: 22, lo: 13, prec: 15 },
+    { day: "Samstag", emoji: "🌤️", hi: 24, lo: 14, prec: 5 },
+    { day: "Sonntag", emoji: "☀️",  hi: 25, lo: 15, prec: 0 },
+  ],
+  snow: [
+    { day: "Heute",  emoji: "❄️", hi:  1, lo: -5, prec: 70 },
+    { day: "Dienstag", emoji: "❄️", hi:  0, lo: -6, prec: 65 },
+    { day: "Mittwoch", emoji: "🌨️", hi: -1, lo: -7, prec: 80 },
+    { day: "Donnerstag", emoji: "☁️",  hi:  2, lo: -3, prec: 30 },
+    { day: "Freitag", emoji: "⛅",  hi:  4, lo: -1, prec: 10 },
+    { day: "Samstag", emoji: "🌤️", hi:  6, lo:  0, prec: 5 },
+    { day: "Sonntag", emoji: "☀️",  hi:  8, lo:  1, prec: 0 },
+  ],
+};
+
+const HOURLY = {
+  sunny:  [{h:"Jetzt",t:23,e:"☀️"},{h:"14",t:24,e:"☀️"},{h:"15",t:25,e:"☀️"},{h:"16",t:25,e:"☀️"},{h:"17",t:24,e:"🌤️"},{h:"18",t:22,e:"🌤️"},{h:"19",t:20,e:"⛅"},{h:"20",t:18,e:"⛅"},{h:"21",t:17,e:"🌙"},{h:"22",t:16,e:"🌙"},{h:"23",t:15,e:"🌙"},{h:"00",t:14,e:"🌙"}],
+  rainy:  [{h:"Jetzt",t:14,e:"🌧️"},{h:"14",t:14,e:"🌧️"},{h:"15",t:15,e:"🌧️"},{h:"16",t:15,e:"🌦️"},{h:"17",t:16,e:"🌦️"},{h:"18",t:16,e:"⛅"},{h:"19",t:15,e:"⛅"},{h:"20",t:14,e:"🌤️"},{h:"21",t:13,e:"🌙"},{h:"22",t:12,e:"🌙"},{h:"23",t:12,e:"🌙"},{h:"00",t:11,e:"🌙"}],
+  night:  [{h:"Jetzt",t:16,e:"🌙"},{h:"01",t:15,e:"🌙"},{h:"02",t:14,e:"🌙"},{h:"03",t:14,e:"🌙"},{h:"04",t:13,e:"🌙"},{h:"05",t:14,e:"🌅"},{h:"06",t:16,e:"🌤️"},{h:"07",t:18,e:"☀️"},{h:"08",t:20,e:"☀️"},{h:"09",t:22,e:"☀️"},{h:"10",t:23,e:"☀️"},{h:"11",t:24,e:"☀️"}],
+  cloudy: [{h:"Jetzt",t:18,e:"☁️"},{h:"14",t:19,e:"☁️"},{h:"15",t:20,e:"⛅"},{h:"16",t:20,e:"⛅"},{h:"17",t:19,e:"☁️"},{h:"18",t:18,e:"☁️"},{h:"19",t:17,e:"🌦️"},{h:"20",t:16,e:"🌦️"},{h:"21",t:15,e:"🌧️"},{h:"22",t:14,e:"🌧️"},{h:"23",t:14,e:"🌧️"},{h:"00",t:13,e:"🌧️"}],
+  storm:  [{h:"Jetzt",t:13,e:"⛈️"},{h:"14",t:14,e:"⛈️"},{h:"15",t:14,e:"⛈️"},{h:"16",t:15,e:"🌧️"},{h:"17",t:15,e:"🌧️"},{h:"18",t:14,e:"🌦️"},{h:"19",t:13,e:"🌦️"},{h:"20",t:12,e:"⛅"},{h:"21",t:11,e:"🌙"},{h:"22",t:11,e:"🌙"},{h:"23",t:10,e:"🌙"},{h:"00",t:10,e:"🌙"}],
+  snow:   [{h:"Jetzt",t:-2,e:"❄️"},{h:"14",t:-1,e:"❄️"},{h:"15",t: 0,e:"❄️"},{h:"16",t: 0,e:"🌨️"},{h:"17",t:-1,e:"🌨️"},{h:"18",t:-2,e:"❄️"},{h:"19",t:-3,e:"❄️"},{h:"20",t:-4,e:"❄️"},{h:"21",t:-5,e:"☁️"},{h:"22",t:-5,e:"☁️"},{h:"23",t:-6,e:"☁️"},{h:"00",t:-6,e:"🌙"}],
+};
+
+const CITIES = [
+  { name: "Karlsruhe", region: "Deutschland", temp: 23, emoji: "☀️", high: 25, low: 14, active: true },
+  { name: "Berlin",    region: "Deutschland", temp: 19, emoji: "⛅",  high: 21, low: 12, active: false },
+  { name: "München",   region: "Deutschland", temp: 21, emoji: "🌤️", high: 24, low: 13, active: false },
+  { name: "Wien",      region: "Österreich",  temp: 22, emoji: "☀️",  high: 26, low: 14, active: false },
+  { name: "Zürich",    region: "Schweiz",     temp: 17, emoji: "🌧️", high: 18, low: 11, active: false },
+  { name: "Lissabon",  region: "Portugal",    temp: 28, emoji: "☀️",  high: 31, low: 19, active: false },
+  { name: "Reykjavík", region: "Island",      temp:  9, emoji: "🌦️", high: 11, low:  5, active: false },
+];
+
+// ----------------- Scene background -----------------
+function Scene({ mood, showRain, showBlobs, sunIntensity, rainIntensity, stormIntensity, snowIntensity }) {
+  const sunnyStyle = mood === "sunny" ? { background: sunnyGradient(sunIntensity) } : null;
+  const sunStyle = mood === "sunny" ? sunCoreStyle(sunIntensity) : null;
+  const bc = mood === "sunny" ? blobColors(sunIntensity) : null;
+
+  const rainDropCount = Math.round(40 + (rainIntensity / 100) * 160);
+  const stormDropCount = Math.round(80 + (stormIntensity / 100) * 200);
+  const drops = useMemo(() => {
+    const arr = [];
+    for (let i = 0; i < 320; i++) {
+      arr.push({
+        left: Math.random() * 110 - 5,
+        height: 40 + Math.random() * 90,
+        duration: 0.3 + Math.random() * 0.6,
+        delay: -Math.random() * 1.2,
+        opacity: 0.35 + Math.random() * 0.55,
+        width: Math.random() < 0.25 ? 1.5 : 1,
+      });
+    }
+    return arr;
+  }, []);
+
+  // Snowflakes
+  const flakeCount = Math.round(30 + (snowIntensity / 100) * 140);
+  const flakes = useMemo(() => {
+    const arr = [];
+    for (let i = 0; i < 200; i++) {
+      const size = 2 + Math.random() * 5;
+      arr.push({
+        left: Math.random() * 110 - 5,
+        size,
+        duration: 6 + Math.random() * 10,
+        delay: -Math.random() * 10,
+        opacity: 0.5 + Math.random() * 0.5,
+      });
+    }
+    return arr;
+  }, []);
+
+  const flashCycle = `${Math.max(2, 12 - (stormIntensity/100) * 9.5).toFixed(1)}s`;
+
+  return (
+    <div className="absolute inset-0" style={{ zIndex: 0 }}>
+      {mood === "sunny"
+        ? <div className="bg-layer" style={sunnyStyle} />
+        : <div className={`bg-layer ${MOODS[mood].bg}`} />}
+      {mood === "sunny" && showBlobs && (
+        <>
+          <div className="sun-core" style={sunStyle} />
+          <div className="blob" style={{ width: 360, height: 360, background: bc.a, top: "55%", left: "-100px" }} />
+          <div className="blob" style={{ width: 440, height: 440, background: bc.b, top: "65%", right: "-120px", animation: "drift-slow 24s ease-in-out infinite alternate" }} />
+          <div className="blob" style={{ width: 240, height: 240, background: bc.c, top: "20%", left: "35%" }} />
+        </>
+      )}
+      {mood === "rainy" && (
+        <>
+          {showBlobs && <>
+            <div className="blob" style={{ width: 360, height: 360, background: "#2a4068", top: "15%", left: "-80px", opacity: 0.55 }} />
+            <div className="blob" style={{ width: 460, height: 460, background: "#4a6890", top: "55%", right: "-120px", opacity: 0.5, animation: "drift-slow 24s ease-in-out infinite alternate" }} />
+            <div className="blob" style={{ width: 280, height: 280, background: "#1a2840", top: "50%", left: "30%", opacity: 0.45 }} />
+          </>}
+          {showRain && (
+            <>
+              <div className="rain-vignette" />
+              <div className="rain-layer">
+                {drops.slice(0, rainDropCount).map((d, i) => (
+                  <div key={i} className="drop"
+                    style={{
+                      left: `${d.left}%`,
+                      height: `${d.height}px`,
+                      width: `${d.width}px`,
+                      opacity: d.opacity,
+                      animationDuration: `${d.duration}s`,
+                      animationDelay: `${d.delay}s`,
+                    }}
+                  />
+                ))}
+              </div>
+              <div className="rain-fog" />
+              <div className="rain-puddle" />
+            </>
+          )}
+        </>
+      )}
+      {mood === "storm" && (
+        <>
+          {showBlobs && <>
+            <div className="blob" style={{ width: 380, height: 380, background: "#0d1230", top: "10%", left: "-80px", opacity: 0.65 }} />
+            <div className="blob" style={{ width: 460, height: 460, background: "#1a1f3a", top: "50%", right: "-120px", opacity: 0.6, animation: "drift-slow 24s ease-in-out infinite alternate" }} />
+            <div className="blob" style={{ width: 280, height: 280, background: "#06080f", top: "55%", left: "25%", opacity: 0.55 }} />
+          </>}
+          <div className="rain-vignette" />
+          <div className="rain-layer">
+            {drops.slice(0, stormDropCount).map((d, i) => (
+              <div key={i} className="drop"
+                style={{
+                  left: `${d.left}%`,
+                  height: `${d.height * 1.1}px`,
+                  width: `${d.width}px`,
+                  opacity: d.opacity,
+                  animationDuration: `${d.duration * 0.85}s`,
+                  animationDelay: `${d.delay}s`,
+                }}
+              />
+            ))}
+          </div>
+          <svg className="bolt b1" width="90" height="260" viewBox="0 0 90 260" style={{ "--flash-cycle": flashCycle }}>
+            <path d="M50 0 L18 130 L40 130 L8 260 L62 110 L36 110 L80 0 Z" fill="rgba(255,255,255,0.95)" stroke="#ffffff" strokeWidth="1" strokeLinejoin="round"/>
+          </svg>
+          <svg className="bolt b2" width="70" height="220" viewBox="0 0 70 220" style={{ "--flash-cycle": flashCycle }}>
+            <path d="M40 0 L14 110 L34 110 L6 220 L52 95 L28 95 L62 0 Z" fill="rgba(220,235,255,0.95)" stroke="#ffffff" strokeWidth="1" strokeLinejoin="round"/>
+          </svg>
+          <div className="storm-flash" style={{ "--flash-cycle": flashCycle }} />
+          <div className="rain-fog" />
+        </>
+      )}
+      {mood === "snow" && (
+        <>
+          {showBlobs && <>
+            <div className="blob" style={{ width: 420, height: 420, background: "#e8eef6", top: "10%", left: "-100px", opacity: 0.65 }} />
+            <div className="blob" style={{ width: 380, height: 380, background: "#cdd8e6", top: "55%", right: "-80px", opacity: 0.55, animation: "drift-slow 24s ease-in-out infinite alternate" }} />
+            <div className="blob" style={{ width: 240, height: 240, background: "#a7b8d0", top: "30%", right: "25%", opacity: 0.4 }} />
+          </>}
+          <div className="snow-layer">
+            {flakes.slice(0, flakeCount).map((f, i) => (
+              <div key={i} className="snowflake"
+                style={{
+                  left: `${f.left}%`,
+                  width: `${f.size}px`,
+                  height: `${f.size}px`,
+                  opacity: f.opacity,
+                  animationDuration: `${f.duration}s`,
+                  animationDelay: `${f.delay}s`,
+                }}
+              />
+            ))}
+          </div>
+          <div className="snow-floor" />
+        </>
+      )}
+      {mood === "night" && (
+        <>
+          <div className="stars" />
+          {showBlobs && <>
+            <div className="blob" style={{ width: 360, height: 360, background: "#6b3aa8", top: "10%", right: "-80px", opacity: 0.7 }} />
+            <div className="blob" style={{ width: 280, height: 280, background: "#a855f7", bottom: "20%", left: "-60px", opacity: 0.55 }} />
+            <div className="blob" style={{ width: 200, height: 200, background: "#fde68a", top: "12%", right: "20%", opacity: 0.5, filter: "blur(20px)" }} />
+          </>}
+        </>
+      )}
+      {mood === "cloudy" && showBlobs && (
+        <>
+          <div className="blob" style={{ width: 400, height: 400, background: "#e2e8f0", top: "10%", left: "-100px", opacity: 0.7 }} />
+          <div className="blob" style={{ width: 380, height: 380, background: "#cbd5e1", top: "55%", right: "-80px", opacity: 0.65, animation: "drift-slow 24s ease-in-out infinite alternate" }} />
+          <div className="blob" style={{ width: 260, height: 260, background: "#fef3c7", top: "30%", right: "25%", opacity: 0.4 }} />
+        </>
+      )}
+    </div>
+  );
+}
+
+// ----------------- Title bar (Win11) -----------------
+function TitleBar({ mood }) {
+  return (
+    <div className="absolute top-0 left-0 right-0 h-8 flex items-center z-50 select-none"
+         style={{ WebkitAppRegion: "drag" }}>
+      <div className="flex items-center gap-2 pl-3 text-white/90 text-[12px] font-medium">
+        <div className="w-4 h-4 rounded-sm grid place-items-center"
+             style={{ background: "linear-gradient(135deg, #ff7a18, #ffb347)", boxShadow: "0 0 6px rgba(255,154,68,0.6)" }}>
+          <span style={{ fontSize: 9 }}>☀</span>
+        </div>
+        <span>Cirrus</span>
+        <span className="text-white/45">— Karlsruhe</span>
+      </div>
+      <div className="flex-1" />
+      <div className="flex" style={{ WebkitAppRegion: "no-drag" }}>
+        <div className="win-btn"><Icon name="minus" size={14} /></div>
+        <div className="win-btn"><Icon name="square" size={12} /></div>
+        <div className="win-btn close"><Icon name="close" size={14} /></div>
+      </div>
+    </div>
+  );
+}
+
+// ----------------- Sidebar -----------------
+function Sidebar({ compact, apiKey, setApiKey }) {
+  const navs = [
+    { id: "home", label: "Heute", icon: "home", active: true },
+    { id: "map", label: "Karte", icon: "map" },
+    { id: "radar", label: "Radar", icon: "radar" },
+    { id: "cal", label: "Wochenplan", icon: "cal" },
+    { id: "fav", label: "Favoriten", icon: "star" },
+    { id: "set", label: "Einstellungen", icon: "settings" },
+  ];
+  return (
+    <div className="sidebar-glass flex flex-col" style={{ width: compact ? 72 : 260, transition: "width 0.25s ease" }}>
+      <div className="h-8 flex-shrink-0" />
+      {/* Search */}
+      {!compact && (
+        <div className="px-3 mt-2">
+          <div className="glass-tiny rounded-lg flex items-center gap-2 px-3 py-2">
+            <Icon name="search" size={14} color="rgba(255,255,255,0.7)" />
+            <input
+              placeholder="Suchen..."
+              className="bg-transparent outline-none flex-1 text-[12px] placeholder-white/50 text-white"
+            />
+            <kbd className="text-white/45 text-[10px] font-mono px-1.5 py-0.5 rounded border border-white/15">Ctrl K</kbd>
+          </div>
+        </div>
+      )}
+      {/* Nav */}
+      <nav className="px-2 mt-4 flex flex-col gap-0.5">
+        {navs.map(n => (
+          <div key={n.id} className={`nav-item ${n.active ? "active" : ""}`} title={n.label}>
+            <Icon name={n.icon} size={16} />
+            {!compact && <span>{n.label}</span>}
+          </div>
+        ))}
+      </nav>
+
+      {/* Cities */}
+      {!compact && (
+        <>
+          <div className="mt-6 px-4 flex items-center justify-between">
+            <span className="text-[10px] uppercase tracking-wider text-white/45 font-semibold">Meine Orte</span>
+            <button className="text-white/60 hover:text-white"><Icon name="plus" size={14} /></button>
+          </div>
+          <div className="px-2 mt-1.5 flex flex-col gap-0.5 overflow-y-auto scrolly" style={{ flex: 1 }}>
+            {CITIES.map(c => (
+              <div key={c.name} className={`city-card ${c.active ? "active" : ""}`}>
+                <div className="text-[20px] leading-none">{c.emoji}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-semibold truncate">{c.name}</div>
+                  <div className="text-[10.5px] text-white/55 truncate">{c.region}</div>
+                </div>
+                <div className="text-right">
+                  <div className="font-serif text-[22px] leading-none">{c.temp}°</div>
+                  <div className="text-[10px] text-white/55 mt-0.5">{c.high}° / {c.low}°</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {!compact && (
+        <div className="px-3 py-3 mt-auto border-t border-white/8">
+          <div className="flex items-center justify-between px-1 mb-2">
+            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-white/45 font-semibold">
+              <Icon name="settings" size={11} />
+              <span>Wetter-API</span>
+            </div>
+            <span className={`text-[9.5px] font-mono px-1.5 py-0.5 rounded ${apiKey ? "bg-emerald-500/20 text-emerald-200" : "bg-white/10 text-white/55"}`}>
+              {apiKey ? "VERBUNDEN" : "NICHT GESETZT"}
+            </span>
+          </div>
+          <div className="glass-tiny rounded-lg flex items-center gap-2 px-2.5 py-2">
+            <Icon name="sparkle" size={13} color="rgba(255,255,255,0.65)" />
+            <input
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="sk_live_… · OpenWeather Key"
+              className="bg-transparent outline-none flex-1 text-[12px] placeholder-white/40 text-white font-mono tracking-wide min-w-0"
+            />
+            {apiKey && (
+              <button
+                onClick={() => setApiKey("")}
+                className="text-white/45 hover:text-white"
+                title="Key entfernen"
+              >
+                <Icon name="close" size={12} />
+              </button>
+            )}
+          </div>
+          <div className="text-[10px] text-white/45 mt-1.5 px-1 leading-snug">
+            Lokal gespeichert. Nie an Dritte gesendet.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ----------------- Hero -----------------
+function Hero({ data }) {
+  return (
+    <div className="relative text-readable">
+      <div className="flex items-center gap-2 text-white/80 text-[11px] font-semibold uppercase tracking-wider">
+        <Icon name="location" size={13} />
+        <span>Mein Standort</span>
+        <span className="text-white/50">·</span>
+        <span className="live-dot inline-block"></span>
+        <span className="text-white/65">Live aktualisiert vor 2 Min.</span>
+      </div>
+      <h1 className="font-serif text-[58px] leading-[1] mt-1.5 tracking-tight">Karlsruhe</h1>
+      <div className="text-white/70 text-[14px] mt-0.5">Deutschland · Baden-Württemberg · 49.01°N, 8.40°E</div>
+
+      <div className="flex items-end gap-8 mt-1">
+        <div className="relative flex items-start">
+          <span className="temp-display">{data.temp}</span>
+          <span className="font-serif text-[80px] leading-[1] mt-4 ml-2 opacity-90">°</span>
+        </div>
+        <div className="pb-12">
+          <div className="font-serif italic text-[44px] leading-none">{data.condition}</div>
+          <div className="text-white/80 text-[14px] mt-2.5">
+            Höchst {data.high}° · Tief {data.low}° · {data.sub}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ----------------- Stat chips -----------------
+function StatChips({ data }) {
+  const chips = [
+    { label: "Gefühlt",     value: `${data.feels}°`,     icon: "thermometer", sub: data.feels >= data.temp ? "Wärmer als real" : "Kühler als real" },
+    { label: "Wind",        value: `${data.wind}`,       icon: "wind",        sub: `km/h · ${data.windDir}` },
+    { label: "Luftfeuchte", value: `${data.humidity}%`,  icon: "drop",        sub: data.humidity > 70 ? "Schwül" : "Komfortabel" },
+    { label: "UV-Index",    value: `${data.uv}`,         icon: "uv",          sub: data.uv <= 2 ? "Niedrig" : data.uv <= 5 ? "Mäßig" : data.uv <= 7 ? "Hoch" : "Sehr hoch" },
+  ];
+  return (
+    <div className="grid grid-cols-4 gap-3 text-readable">
+      {chips.map(c => (
+        <div key={c.label} className="glass-chip rounded-2xl px-4 py-3 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl grid place-items-center" style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)" }}>
+            <Icon name={c.icon} size={18} />
+          </div>
+          <div className="min-w-0">
+            <div className="text-white/65 text-[10px] uppercase tracking-wider font-semibold">{c.label}</div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-white text-[24px] font-medium leading-tight">{c.value}</span>
+            </div>
+            <div className="text-white/65 text-[10.5px]">{c.sub}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ----------------- Hourly chart (line + area + bars) -----------------
+function HourlyChart({ mood }) {
+  const data = HOURLY[mood];
+  const W = 720, H = 140, padX = 28, padY = 18;
+  const max = Math.max(...data.map(d=>d.t));
+  const min = Math.min(...data.map(d=>d.t));
+  const range = Math.max(1, max - min);
+  const step = (W - padX*2) / (data.length - 1);
+  const pts = data.map((d,i) => {
+    const x = padX + i*step;
+    const y = padY + (H - padY*2) * (1 - (d.t - min)/range);
+    return { x, y, ...d };
+  });
+  const pathD = pts.map((p,i) => `${i===0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
+  const areaD = `${pathD} L${pts[pts.length-1].x},${H-padY} L${pts[0].x},${H-padY} Z`;
+
+  return (
+    <div className="glass rounded-2xl p-5 text-readable">
+      <div className="flex items-center gap-2 mb-3">
+        <Icon name="sparkle" size={14} color="rgba(255,255,255,0.65)" />
+        <span className="text-white/65 text-[10px] uppercase tracking-wider font-semibold">Stündlich · Nächste 12 Std.</span>
+        <span className="ml-auto live-dot"></span>
+        <span className="text-white/70 text-[11px] font-medium">Live</span>
+      </div>
+      <div className="relative">
+        <svg width="100%" viewBox={`0 0 ${W} ${H+30}`} preserveAspectRatio="none" style={{ overflow: "visible" }}>
+          <defs>
+            <linearGradient id="areaG" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#fff" stopOpacity="0.5"/>
+              <stop offset="100%" stopColor="#fff" stopOpacity="0"/>
+            </linearGradient>
+          </defs>
+          {/* gridlines */}
+          {[0, 0.5, 1].map((p, i) => (
+            <line key={i} x1={padX} x2={W-padX} y1={padY + (H-padY*2)*p} y2={padY + (H-padY*2)*p}
+                  stroke="rgba(255,255,255,0.1)" strokeDasharray="2 4"/>
+          ))}
+          <path d={areaD} fill="url(#areaG)"/>
+          <path d={pathD} stroke="#fff" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{ filter: "drop-shadow(0 0 6px rgba(255,255,255,0.4))" }}/>
+          {pts.map((p, i) => (
+            <g key={i}>
+              <circle cx={p.x} cy={p.y} r="3" fill="#fff" />
+              <text x={p.x} y={p.y - 10} textAnchor="middle" fill="#fff" fontSize="11" fontWeight="600">{p.t}°</text>
+              <text x={p.x} y={H + 4} textAnchor="middle" fontSize="14">{p.e}</text>
+              <text x={p.x} y={H + 22} textAnchor="middle" fill="rgba(255,255,255,0.65)" fontSize="10" fontWeight="500">{p.h}</text>
+            </g>
+          ))}
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+// ----------------- 7-Day forecast list -----------------
+function Forecast({ mood }) {
+  const days = FORECAST[mood];
+  const gMax = Math.max(...days.map(d=>d.hi));
+  const gMin = Math.min(...days.map(d=>d.lo));
+  const span = Math.max(1, gMax - gMin);
+  const today = MOODS[mood].temp;
+
+  return (
+    <div className="glass rounded-2xl p-5 text-readable">
+      <div className="flex items-center gap-2 mb-2">
+        <Icon name="list" size={14} color="rgba(255,255,255,0.65)" />
+        <span className="text-white/65 text-[10px] uppercase tracking-wider font-semibold">7-Tage Vorhersage</span>
+        <span className="ml-auto text-white/55 text-[11px]">Karlsruhe</span>
+      </div>
+      <div className="flex flex-col">
+        {days.map((d,i) => {
+          const loPct = ((d.lo - gMin) / span) * 100;
+          const hiPct = ((d.hi - gMin) / span) * 100;
+          const isToday = i === 0;
+          const nowPct = isToday ? ((today - gMin) / span) * 100 : null;
+          return (
+            <div key={i} className={`grid items-center gap-3 py-2.5 ${i<days.length-1 ? "border-b border-white/10" : ""}`}
+                 style={{ gridTemplateColumns: "110px 28px 44px 1fr 70px" }}>
+              <div className={`text-[13px] ${isToday ? "text-white font-semibold" : "text-white/85 font-medium"}`}>{d.day}</div>
+              <div className="text-[18px] text-center leading-none">{d.emoji}</div>
+              <div className="flex items-center gap-1 text-white/65 text-[11px]">
+                <Icon name="drop" size={10} />
+                <span>{d.prec}%</span>
+              </div>
+              <div className="relative h-1.5 rounded-full bg-white/15 overflow-visible">
+                <div
+                  className="absolute top-0 bottom-0 rounded-full"
+                  style={{
+                    left: `${loPct}%`,
+                    width: `${hiPct - loPct}%`,
+                    background: "linear-gradient(90deg, #5ec4ff 0%, #fffaa8 50%, #ff7a3a 100%)",
+                    boxShadow: "0 0 8px rgba(255,255,255,0.3)"
+                  }}
+                />
+                {isToday && (
+                  <div className="absolute -top-1 w-3 h-3 rounded-full bg-white"
+                       style={{ left: `calc(${nowPct}% - 6px)`, boxShadow: "0 0 8px rgba(255,255,255,0.9)" }} />
+                )}
+              </div>
+              <div className="text-right text-[13px] tabular-nums">
+                <span className="text-white font-semibold">{d.hi}°</span>
+                <span className="text-white/55"> / {d.lo}°</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ----------------- Detail cards (right column) -----------------
+function UVCard({ data }) {
+  return (
+    <div className="glass rounded-2xl p-4 text-readable">
+      <div className="flex items-center gap-2 text-white/65 text-[10px] uppercase tracking-wider font-semibold mb-2">
+        <Icon name="uv" size={12}/> <span>UV-Index</span>
+      </div>
+      <div className="text-white text-[44px] font-serif leading-none">{data.uv}</div>
+      <div className="text-white/85 text-[13px] mt-1">{data.uv <= 2 ? "Niedrig" : data.uv <= 5 ? "Mäßig" : data.uv <= 7 ? "Hoch" : "Sehr hoch"}</div>
+      <div className="mt-3 h-1.5 rounded-full" style={{background: "linear-gradient(90deg, #4ade80, #facc15, #f97316, #ef4444, #a855f7)"}}>
+        <div className="relative h-full">
+          <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white"
+               style={{ left: `calc(${Math.min(100,(data.uv/11)*100)}% - 6px)`, boxShadow: "0 0 8px rgba(255,255,255,0.9)" }} />
+        </div>
+      </div>
+      <div className="text-white/55 text-[10.5px] mt-2">Sonnenschutz {data.uv >= 3 ? "empfohlen" : "nicht nötig"}.</div>
+    </div>
+  );
+}
+
+function SunCard({ data, mood }) {
+  // Sun position: estimate progress between sunrise (5:48) and sunset (21:14)
+  const minutes = (mood === "night") ? 60*23 + 30 : 60*13 + 24;
+  const start = 5*60+48, end = 21*60+14;
+  const progress = Math.max(0, Math.min(1, (minutes - start) / (end - start)));
+  return (
+    <div className="glass rounded-2xl p-4 text-readable">
+      <div className="flex items-center gap-2 text-white/65 text-[10px] uppercase tracking-wider font-semibold mb-2">
+        <Icon name="sunrise" size={12}/> <span>Sonne</span>
+      </div>
+      <div className="relative h-24 mt-2">
+        <svg viewBox="0 0 220 96" className="w-full h-full" preserveAspectRatio="none">
+          <path d="M 10 86 Q 110 -20 210 86" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" fill="none" strokeDasharray="3 4"/>
+          <line x1="10" y1="86" x2="210" y2="86" stroke="rgba(255,255,255,0.25)" strokeWidth="1"/>
+          {/* sun marker */}
+          {(() => {
+            const t = progress;
+            const cx = 10 + 200 * t;
+            const cy = 86 - Math.sin(Math.PI * t) * 80;
+            return (
+              <>
+                <circle cx={cx} cy={cy} r="8" fill={mood === "night" ? "#c4b5fd" : "#fde047"} style={{ filter: `drop-shadow(0 0 12px ${mood === "night" ? "#a78bfa" : "#fde047"})` }}/>
+                <circle cx={cx} cy={cy} r="3" fill="#fff"/>
+              </>
+            );
+          })()}
+        </svg>
+      </div>
+      <div className="flex justify-between text-[12px] mt-2">
+        <div>
+          <div className="text-white/55 text-[10px] uppercase tracking-wider font-semibold">Aufgang</div>
+          <div className="text-white font-medium">{data.sunrise}</div>
+        </div>
+        <div className="text-right">
+          <div className="text-white/55 text-[10px] uppercase tracking-wider font-semibold">Untergang</div>
+          <div className="text-white font-medium">{data.sunset}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WindCard({ data }) {
+  const dirs = { N: 0, NO: 45, O: 90, SO: 135, S: 180, SW: 225, W: 270, NW: 315 };
+  const angle = dirs[data.windDir] || 0;
+  return (
+    <div className="glass rounded-2xl p-4 text-readable">
+      <div className="flex items-center gap-2 text-white/65 text-[10px] uppercase tracking-wider font-semibold mb-2">
+        <Icon name="wind" size={12}/> <span>Wind & Richtung</span>
+      </div>
+      <div className="flex items-center gap-4 mt-2">
+        <div className="relative w-24 h-24 flex-shrink-0">
+          <div className="absolute inset-0 rounded-full border border-white/20"></div>
+          <div className="absolute inset-2 rounded-full border border-white/10"></div>
+          {["N","O","S","W"].map((l,i) => (
+            <div key={l} className="absolute text-white/55 text-[10px] font-semibold"
+                 style={{
+                   top: ["2px","50%","calc(100% - 14px)","50%"][i],
+                   left: ["50%","calc(100% - 12px)","50%","2px"][i],
+                   transform: "translate(-50%, -50%)"
+                 }}>{l}</div>
+          ))}
+          <div className="absolute inset-0 grid place-items-center">
+            <div style={{ transform: `rotate(${angle}deg)` }}>
+              <svg width="48" height="48" viewBox="0 0 48 48">
+                <path d="M 24 6 L 30 30 L 24 26 L 18 30 Z" fill="#fff" style={{ filter: "drop-shadow(0 0 6px rgba(255,255,255,0.6))" }}/>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="font-serif text-[40px] leading-none">{data.wind}</div>
+          <div className="text-white/65 text-[11px]">km/h aus {data.windDir}</div>
+          <div className="text-white/55 text-[10.5px] mt-2">Böen bis {data.wind + 8} km/h</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AirCard({ data }) {
+  const level = data.aqi <= 25 ? "Sehr gut" : data.aqi <= 50 ? "Gut" : data.aqi <= 100 ? "Mäßig" : "Schlecht";
+  return (
+    <div className="glass rounded-2xl p-4 text-readable">
+      <div className="flex items-center gap-2 text-white/65 text-[10px] uppercase tracking-wider font-semibold mb-2">
+        <Icon name="aqi" size={12}/> <span>Luftqualität</span>
+      </div>
+      <div className="flex items-baseline gap-2">
+        <div className="font-serif text-[44px] leading-none">{data.aqi}</div>
+        <div className="text-white/80 text-[13px]">AQI</div>
+      </div>
+      <div className="text-white/85 text-[13px] mt-1">{level}</div>
+      <div className="mt-3 h-1.5 rounded-full" style={{background: "linear-gradient(90deg, #4ade80 0%, #facc15 35%, #f97316 60%, #ef4444 85%, #a855f7 100%)"}}>
+        <div className="relative h-full">
+          <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white"
+               style={{ left: `calc(${Math.min(100,(data.aqi/200)*100)}% - 6px)`, boxShadow: "0 0 8px rgba(255,255,255,0.9)" }} />
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2 mt-3 text-center">
+        <div><div className="text-white/55 text-[9px] uppercase tracking-wider">PM2.5</div><div className="text-[12px] font-medium">12</div></div>
+        <div><div className="text-white/55 text-[9px] uppercase tracking-wider">PM10</div><div className="text-[12px] font-medium">22</div></div>
+        <div><div className="text-white/55 text-[9px] uppercase tracking-wider">O₃</div><div className="text-[12px] font-medium">58</div></div>
+      </div>
+    </div>
+  );
+}
+
+function MiniStat({ icon, label, value, sub }) {
+  return (
+    <div className="glass rounded-2xl p-4 text-readable">
+      <div className="flex items-center gap-2 text-white/65 text-[10px] uppercase tracking-wider font-semibold mb-2">
+        <Icon name={icon} size={12}/> <span>{label}</span>
+      </div>
+      <div className="font-serif text-[36px] leading-none">{value}</div>
+      <div className="text-white/65 text-[11px] mt-1">{sub}</div>
+    </div>
+  );
+}
+
+// ----------------- App -----------------
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const data = MOODS[tweaks.mood];
+
+  // Scale to viewport
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const onR = () => {
+      const w = window.innerWidth, h = window.innerHeight;
+      const W = 1380, H = 880;
+      setScale(Math.min(w / W, h / H, 1));
+    };
+    onR();
+    window.addEventListener("resize", onR);
+    return () => window.removeEventListener("resize", onR);
+  }, []);
+
+  return (
+    <div className="desk">
+      <div className="scale-wrap" style={{ transform: `scale(${scale})` }}>
+        <div className="win" style={{ width: 1380, height: 880 }}>
+          {/* Scene fills entire window */}
+          <Scene
+            mood={tweaks.mood}
+            showRain={tweaks.showRain}
+            showBlobs={tweaks.showBlobs}
+            sunIntensity={tweaks.sunIntensity}
+            rainIntensity={tweaks.rainIntensity}
+            stormIntensity={tweaks.stormIntensity}
+            snowIntensity={tweaks.snowIntensity}
+          />
+
+          <TitleBar mood={tweaks.mood} />
+
+          <div className="absolute inset-0 pt-8 flex" style={{ zIndex: 1 }}>
+            <Sidebar
+              compact={tweaks.compactSidebar}
+              apiKey={tweaks.apiKey}
+              setApiKey={(v) => setTweak("apiKey", v)}
+            />
+
+            <div className="flex-1 overflow-y-auto scrolly">
+              <div className="px-8 py-6 grid gap-6" style={{ gridTemplateColumns: "1fr 360px" }}>
+                {/* Main column */}
+                <div className="flex flex-col gap-4 min-w-0">
+                  <Hero data={data} />
+                  <StatChips data={data} />
+                  <HourlyChart mood={tweaks.mood} />
+                  <Forecast mood={tweaks.mood} />
+                </div>
+
+                {/* Right column */}
+                <div className="flex flex-col gap-4">
+                  <UVCard data={data} />
+                  <SunCard data={data} mood={tweaks.mood} />
+                  <WindCard data={data} />
+                  <AirCard data={data} />
+                  <div className="grid grid-cols-2 gap-3">
+                    <MiniStat icon="eye" label="Sicht" value={`${data.visibility} km`} sub="Klare Sicht" />
+                    <MiniStat icon="drop" label="Niederschlag" value={`${data.precip} mm`} sub="Letzte 24h" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <MiniStat icon="thermometer" label="Taupunkt" value={`${data.dew}°`} sub="Komfortabel" />
+                    <MiniStat icon="aqi" label="Luftdruck" value={`${data.pressure}`} sub="hPa · stabil" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <TweaksPanel title="Tweaks">
+        <TweakSection title="Wetterstimmung">
+          <TweakRadio
+            label="Mood"
+            value={tweaks.mood}
+            options={[
+              { value: "sunny", label: "Sonnig" },
+              { value: "cloudy", label: "Bewölkt" },
+              { value: "rainy", label: "Regen" },
+              { value: "storm", label: "Gewitter" },
+              { value: "snow", label: "Schnee" },
+              { value: "night", label: "Nacht" },
+            ]}
+            onChange={(v) => setTweak("mood", v)}
+          />
+        </TweakSection>
+        {tweaks.mood === "sunny" && (
+          <TweakSection title="Sonnenstärke">
+            <TweakSlider
+              label="Intensität"
+              value={tweaks.sunIntensity}
+              min={0} max={100} step={1} unit="%"
+              onChange={(v) => setTweak("sunIntensity", v)}
+            />
+            <div style={{ fontSize: 11, color: "rgba(0,0,0,0.55)", padding: "2px 4px", lineHeight: 1.4 }}>
+              0 = kühler Morgen (blau) · 50 = warmer Tag · 100 = heißer Sonnenuntergang
+            </div>
+          </TweakSection>
+        )}
+        {tweaks.mood === "rainy" && (
+          <TweakSection title="Regenstärke">
+            <TweakSlider
+              label="Tropfen"
+              value={tweaks.rainIntensity}
+              min={0} max={100} step={1} unit="%"
+              onChange={(v) => setTweak("rainIntensity", v)}
+            />
+          </TweakSection>
+        )}
+        {tweaks.mood === "storm" && (
+          <TweakSection title="Gewitter">
+            <TweakSlider
+              label="Intensität"
+              value={tweaks.stormIntensity}
+              min={0} max={100} step={1} unit="%"
+              onChange={(v) => setTweak("stormIntensity", v)}
+            />
+            <div style={{ fontSize: 11, color: "rgba(0,0,0,0.55)", padding: "2px 4px", lineHeight: 1.4 }}>
+              Steuert Regen-Dichte und Blitz-Frequenz.
+            </div>
+          </TweakSection>
+        )}
+        {tweaks.mood === "snow" && (
+          <TweakSection title="Schneefall">
+            <TweakSlider
+              label="Flocken"
+              value={tweaks.snowIntensity}
+              min={0} max={100} step={1} unit="%"
+              onChange={(v) => setTweak("snowIntensity", v)}
+            />
+          </TweakSection>
+        )}
+        <TweakSection title="Hintergrund">
+          <TweakToggle label="Blob-Shapes" value={tweaks.showBlobs} onChange={(v) => setTweak("showBlobs", v)} />
+          <TweakToggle label="Regen-Streifen (nur Regen)" value={tweaks.showRain} onChange={(v) => setTweak("showRain", v)} />
+        </TweakSection>
+        <TweakSection title="Layout">
+          <TweakToggle label="Sidebar kompakt" value={tweaks.compactSidebar} onChange={(v) => setTweak("compactSidebar", v)} />
+        </TweakSection>
+      </TweaksPanel>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
