@@ -28,10 +28,17 @@ export function useWeather(locationInput = "Berlin") {
           location = locationInput; // Expects { latitude, longitude, name, country, admin1 }
         }
 
-        // 2. Weather Data
+        // 2. Weather & Air Quality Data
         const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${location.latitude}&longitude=${location.longitude}&current=temperature_2m,is_day,weathercode,windspeed_10m,winddirection_10m,relative_humidity_2m,uv_index,apparent_temperature,precipitation,surface_pressure&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,sunrise,sunset&hourly=temperature_2m,weathercode,precipitation&timezone=auto`;
-        const weatherRes = await fetch(weatherUrl);
+        const aqiUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${location.latitude}&longitude=${location.longitude}&current=european_aqi,pm2_5,pm10,ozone&timezone=auto`;
+        
+        const [weatherRes, aqiRes] = await Promise.all([
+          fetch(weatherUrl),
+          fetch(aqiUrl)
+        ]);
+        
         const wd = await weatherRes.json();
+        const aqiData = await aqiRes.json();
 
         if (mounted) {
           const current = wd.current;
@@ -109,7 +116,10 @@ export function useWeather(locationInput = "Berlin") {
               precip: current.precipitation,
               visibility: 10, // Not all endpoints provide this without extra flags
               dew: Math.round(current.temperature_2m - (100 - current.relative_humidity_2m)/5), // Approx
-              aqi: 25, // Mocked for now
+              aqi: Math.round(aqiData.current.european_aqi),
+              pm25: Math.round(aqiData.current.pm2_5),
+              pm10: Math.round(aqiData.current.pm10),
+              ozone: Math.round(aqiData.current.ozone),
               sunrise: formatTime(daily.sunrise[0]),
               sunset: formatTime(daily.sunset[0]),
             },

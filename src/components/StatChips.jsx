@@ -8,7 +8,7 @@ export function StatChips({ data }) {
     { label: "Gefühlt",     value: `${current.feels}°`,     icon: "thermometer", sub: current.feels >= current.temp ? "Wärmer als real" : "Kühler als real" },
     { label: "Wind",        value: `${current.wind}`,       icon: "wind",        sub: `km/h · ${current.windDir}` },
     { label: "Luftfeuchte", value: `${current.humidity}%`,  icon: "drop",        sub: current.humidity > 70 ? "Schwül" : "Komfortabel" },
-    { label: "UV-Index",    value: `${current.uv}`,         icon: "uv",          sub: current.uv <= 2 ? "Niedrig" : current.uv <= 5 ? "Mäßig" : current.uv <= 7 ? "Hoch" : "Sehr hoch" },
+    { label: "Niederschlag", value: `${current.precip} mm`, icon: "drop",        sub: current.precip > 0 ? "Aktuell" : "Kein Regen" },
   ];
   
   return (

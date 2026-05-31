@@ -151,9 +151,9 @@ export function AirCard({ data }) {
         </div>
       </div>
       <div className="grid grid-cols-3 gap-2 mt-3 text-center">
-        <div><div className="text-white/55 text-[9px] uppercase tracking-wider">PM2.5</div><div className="text-[12px] font-medium">12</div></div>
-        <div><div className="text-white/55 text-[9px] uppercase tracking-wider">PM10</div><div className="text-[12px] font-medium">22</div></div>
-        <div><div className="text-white/55 text-[9px] uppercase tracking-wider">O₃</div><div className="text-[12px] font-medium">58</div></div>
+        <div><div className="text-white/55 text-[9px] uppercase tracking-wider">PM2.5</div><div className="text-[12px] font-medium">{current.pm25}</div></div>
+        <div><div className="text-white/55 text-[9px] uppercase tracking-wider">PM10</div><div className="text-[12px] font-medium">{current.pm10}</div></div>
+        <div><div className="text-white/55 text-[9px] uppercase tracking-wider">O₃</div><div className="text-[12px] font-medium">{current.ozone}</div></div>
       </div>
     </div>
   );
